@@ -31,6 +31,8 @@
             --gray: #565959;
             --light-gray: #e9ecef;
             --success: #00a65a;
+            --error: #dc3545;
+            --warning: #ffc107;
             --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
             --hover-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
             --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -55,6 +57,69 @@
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            background: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transform: translateX(100%);
+            opacity: 0;
+            transition: all 0.4s ease;
+            border-left: 4px solid var(--primary);
+            max-width: 350px;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            border-left-color: var(--success);
+        }
+
+        .toast.error {
+            border-left-color: var(--error);
+        }
+
+        .toast.warning {
+            border-left-color: var(--warning);
+        }
+
+        .toast i {
+            font-size: 1.5em;
+        }
+
+        .toast.success i {
+            color: var(--success);
+        }
+
+        .toast.error i {
+            color: var(--error);
+        }
+
+        .toast.warning i {
+            color: var(--warning);
+        }
+
+        .toast-message {
+            font-weight: 500;
         }
 
         /* Header */
@@ -219,10 +284,20 @@
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
             margin-top: 20px;
             border: 2px solid var(--light-gray);
+            text-decoration: none;
+            color: var(--dark);
+            transition: var(--transition);
         }
 
-        .author-badge img {
-            height: 40px;
+        .author-badge:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+            border-color: var(--primary);
+        }
+
+        .author-badge i {
+            color: var(--primary);
+            font-size: 2em;
         }
 
         .author-badge span {
@@ -357,6 +432,8 @@
             transition: var(--transition);
             font-size: 1.05em;
             box-shadow: 0 5px 15px rgba(255, 153, 0, 0.3);
+            border: none;
+            cursor: pointer;
         }
 
         .social-link-btn:hover {
@@ -408,6 +485,58 @@
             line-height: 1.6;
         }
 
+        /* Book Actions (Edit/Delete) */
+        .book-actions {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 10;
+        }
+
+        .book-card:hover .book-actions {
+            opacity: 1;
+        }
+
+        .action-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 1.1em;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        .edit-btn {
+            background: white;
+            color: var(--primary);
+        }
+
+        .edit-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .delete-btn {
+            background: white;
+            color: var(--error);
+        }
+
+        .delete-btn:hover {
+            background: var(--error);
+            color: white;
+            transform: scale(1.1);
+        }
+
         /* Books Grid */
         .books-grid {
             display: grid;
@@ -454,7 +583,7 @@
         .book-badge {
             position: absolute;
             top: 20px;
-            right: 20px;
+            left: 20px;
             background: var(--primary);
             color: white;
             padding: 8px 20px;
@@ -462,6 +591,7 @@
             font-weight: 600;
             font-size: 0.9em;
             box-shadow: 0 5px 15px rgba(255, 153, 0, 0.3);
+            z-index: 5;
         }
 
         .book-info {
@@ -508,7 +638,7 @@
             min-height: 80px;
         }
 
-        .book-actions {
+        .book-buttons {
             display: flex;
             gap: 15px;
         }
@@ -830,7 +960,7 @@
                 grid-template-columns: 1fr;
             }
             
-            .book-actions {
+            .book-buttons {
                 flex-direction: column;
             }
             
@@ -872,6 +1002,9 @@
     </style>
 </head>
 <body>
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer"></div>
+
     <!-- Header -->
     <header>
         <div class="header-content">
@@ -908,7 +1041,7 @@
             <p class="tagline">German-Jordanian Author • Exploring Love, Desire & Human Relationships</p>
             
             <a href="https://author.amazon.com/home" class="author-badge" target="_blank" rel="noopener">
-                <i class="fab fa-amazon" style="color: var(--primary); font-size: 2em;"></i>
+                <i class="fab fa-amazon"></i>
                 <span>Official Amazon Author Page</span>
             </a>
         </section>
@@ -1005,67 +1138,4 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="publicationYear" class="form-label">
-                                <i class="fas fa-calendar-alt"></i> Publication Year *
-                            </label>
-                            <input type="number" id="publicationYear" class="form-input" placeholder="2024" min="1900" max="2100" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="bookISBN" class="form-label">
-                                <i class="fas fa-barcode"></i> ISBN (Optional)
-                            </label>
-                            <input type="text" id="bookISBN" class="form-input" placeholder="978-3-16-148410-0">
-                        </div>
-                    </div>
-                    
-                    <div class="form-group full-width">
-                        <label for="bookDescription" class="form-label">
-                            <i class="fas fa-align-left"></i> Book Description *
-                        </label>
-                        <textarea id="bookDescription" class="form-input" placeholder="Write a compelling description of your book..." required></textarea>
-                    </div>
-                    
-                    <div class="form-group full-width">
-                        <label for="amazonLink" class="form-label">
-                            <i class="fab fa-amazon"></i> Amazon Link *
-                        </label>
-                        <input type="url" id="amazonLink" class="form-input" value="https://author.amazon.com/home" required>
-                    </div>
-                    
-                    <div class="form-group full-width">
-                        <label class="form-label">
-                            <i class="fas fa-image"></i> Book Cover *
-                        </label>
-                        <div class="upload-area" id="uploadArea">
-                            <i class="fas fa-cloud-upload-alt"></i>
-                            <div class="upload-text">Click to upload book cover image</div>
-                            <div class="upload-hint">JPG, PNG or WebP • Max 5MB</div>
-                            <input type="file" id="bookCover" accept="image/*" style="display: none;">
-                        </div>
-                        <div id="fileName" style="margin-top: 10px; color: var(--gray); font-size: 0.9em;"></div>
-                    </div>
-                    
-                    <button type="submit" class="btn-submit">
-                        <i class="fas fa-plus-circle"></i> Add Book to Website
-                    </button>
-                </form>
-            </div>
-        </section>
-
-        <!-- About Section -->
-        <section class="about-section" id="about">
-            <div class="about-content">
-                <h2>About the Author</h2>
-                <div class="about-text">
-                    <p>Rabeè Luqmann is a German-Jordanian author with a passion for exploring the complexities of love, desire, and the human condition across cultures. His debut novel, <em>Bound by Destiny</em>, captivated readers with its poignant portrayal of arranged marriage in India, blending tradition with modernity.</p>
-                    <p>With <em>Endorphin: The Ache of Wanting</em>, Luqmann plunged into the visceral depths of longing, addiction, and obsessive emotion, crafting a raw, lyrical narrative that lingers in the mind. <em>The Daughter Who Was Not Named</em> solidifies his place as a bold voice, exploring the dark heart of human relationships.</p>
-                    <p>Luqmann's writing is marked by vivid cultural tapestries and powerful storytelling, whether unraveling the tensions between duty and passion or probing the addictive nature of unfulfilled desire.</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- Footer -->
-        <footer>
-            <div class="footer-content">
-                <div class="footer-logo">
-                    <i class="fas fa
+                                <i class="fas fa-calendar-alt"></
