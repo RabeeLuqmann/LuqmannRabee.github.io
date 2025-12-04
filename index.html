@@ -666,6 +666,16 @@
             padding: 10px;
             position: relative;
             z-index: 1;
+            border: 2px solid var(--light-gray);
+            overflow: hidden;
+        }
+
+        /* Book cover image styling */
+        .book-cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 6px;
         }
 
         .book-title {
@@ -1248,7 +1258,6 @@
                 
                 if (password === ADMIN_PASSWORD) {
                     activateAdminMode();
-                    // Remove #admin from URL without reloading page
                     history.replaceState(null, null, ' ');
                 } else {
                     alert('❌ Incorrect password!');
@@ -1260,90 +1269,25 @@
         // Activate admin mode
         function activateAdminMode() {
             isAdminMode = true;
-            
-            // Add admin class to body
             document.body.classList.add('admin-mode');
-            
-            // Show admin bar
-            const adminBar = document.getElementById('adminBar');
-            if (adminBar) {
-                adminBar.style.display = 'flex';
-            }
-            
-            // Show all edit/delete buttons
-            const editButtons = document.querySelectorAll('.book-actions');
-            editButtons.forEach(button => {
-                button.style.display = 'flex';
-            });
-            
-            // Show add book form
-            const addForm = document.querySelector('.add-book-form');
-            if (addForm) {
-                addForm.style.display = 'block';
-            }
-            
-            // Show admin info box
-            const adminInfo = document.querySelector('.admin-info');
-            if (adminInfo) {
-                adminInfo.style.display = 'block';
-            }
-            
-            // Show success message
+            document.getElementById('adminBar').style.display = 'flex';
+            document.querySelectorAll('.book-actions').forEach(button => button.style.display = 'flex');
+            document.querySelector('.add-book-form').style.display = 'block';
+            document.querySelector('.admin-info').style.display = 'block';
             showToast('✅ Admin mode activated! You can now edit books.', 'success');
         }
 
         // Logout function
         function logoutAdmin() {
             isAdminMode = false;
-            
-            // Remove admin class from body
             document.body.classList.remove('admin-mode');
-            
-            // Hide admin bar
-            const adminBar = document.getElementById('adminBar');
-            if (adminBar) adminBar.style.display = 'none';
-            
-            // Hide all edit/delete buttons
-            document.querySelectorAll('.book-actions').forEach(button => {
-                button.style.display = 'none';
-            });
-            
-            // Hide add book form
-            const addForm = document.querySelector('.add-book-form');
-            if (addForm) addForm.style.display = 'none';
-            
-            // Hide admin info box
-            const adminInfo = document.querySelector('.admin-info');
-            if (adminInfo) adminInfo.style.display = 'none';
-            
-            // Show logout message
+            document.getElementById('adminBar').style.display = 'none';
+            document.querySelectorAll('.book-actions').forEach(button => button.style.display = 'none');
+            document.querySelector('.add-book-form').style.display = 'none';
+            document.querySelector('.admin-info').style.display = 'none';
             showToast('🔒 Logged out of admin mode', 'warning');
-            
-            // Scroll to top
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
-
-        // Set up logout button
-        document.addEventListener('DOMContentLoaded', function() {
-            const logoutBtn = document.getElementById('logoutBtn');
-            if (logoutBtn) {
-                logoutBtn.addEventListener('click', logoutAdmin);
-            }
-        });
-
-        // Check for admin mode on page load
-        window.addEventListener('DOMContentLoaded', function() {
-            checkForAdminMode();
-        });
-
-        // Also check when hash changes
-        window.addEventListener('hashchange', function() {
-            checkForAdminMode();
-        });
-
-        // Make logout function available globally
-        window.logoutAdmin = logoutAdmin;
-        // ==================== END ADMIN SYSTEM ====================
 
         // Wait for DOM to load
         document.addEventListener('DOMContentLoaded', function() {
@@ -1356,7 +1300,8 @@
                     description: "A poignant exploration of arranged marriage in India, blending tradition with modernity and the complex interplay between duty and desire.",
                     year: 2022,
                     link: "https://author.amazon.com/home",
-                    color: "#3498db"
+                    color: "#3498db",
+                    coverImage: null
                 },
                 {
                     id: 2,
@@ -1365,7 +1310,8 @@
                     description: "A raw, lyrical journey into the visceral depths of longing, addiction, and the obsessive nature of unfulfilled desire.",
                     year: 2023,
                     link: "https://author.amazon.com/home",
-                    color: "#9b59b6"
+                    color: "#9b59b6",
+                    coverImage: null
                 },
                 {
                     id: 3,
@@ -1374,7 +1320,8 @@
                     description: "A powerful exploration of identity, family secrets, and the dark heart of human relationships across cultural boundaries.",
                     year: 2023,
                     link: "https://author.amazon.com/home",
-                    color: "#e74c3c"
+                    color: "#e74c3c",
+                    coverImage: null
                 }
             ];
 
@@ -1384,6 +1331,9 @@
             const bookCoverInput = document.getElementById('bookCoverInput');
             const imagePreview = document.getElementById('imagePreview');
             const uploadArea = document.getElementById('uploadArea');
+            
+            // Track current uploaded image (temporary storage)
+            let currentUploadedImage = null;
             
             // Toast notification function
             function showToast(message, type = 'success') {
@@ -1396,11 +1346,7 @@
                 `;
                 
                 toastContainer.appendChild(toast);
-                
-                // Show toast
                 setTimeout(() => toast.classList.add('show'), 100);
-                
-                // Remove toast after 4 seconds
                 setTimeout(() => {
                     toast.classList.remove('show');
                     setTimeout(() => toast.remove(), 400);
@@ -1413,23 +1359,7 @@
                 return colors[Math.floor(Math.random() * colors.length)];
             }
 
-            // Handle book card clicks (for mobile compatibility)
-            function handleBookCardClick(event, bookLink) {
-                // Don't trigger if clicking edit/delete buttons
-                if (event.target.closest('.book-actions') || event.target.closest('.action-btn')) {
-                    return;
-                }
-                
-                // Don't trigger if clicking the "View on Amazon" button
-                if (event.target.closest('.kindle-btn')) {
-                    return;
-                }
-                
-                // Open Amazon link in new tab
-                window.open(bookLink, '_blank');
-            }
-
-            // Display all books
+            // Display all books WITH COVER IMAGES
             function displayBooks() {
                 booksGrid.innerHTML = '';
                 
@@ -1448,10 +1378,33 @@
                     const bookCard = document.createElement('div');
                     bookCard.className = 'book-card';
                     
-                    // Add click event to entire card (for mobile compatibility)
+                    // Add click event to entire card
                     bookCard.addEventListener('click', function(e) {
-                        handleBookCardClick(e, book.link);
+                        if (e.target.closest('.book-actions') || e.target.closest('.action-btn') || e.target.closest('.kindle-btn')) {
+                            return;
+                        }
+                        window.open(book.link, '_blank');
                     });
+                    
+                    // Create book cover HTML - USE UPLOADED IMAGE IF AVAILABLE
+                    let coverHTML = '';
+                    if (book.coverImage) {
+                        // Show uploaded image
+                        coverHTML = `
+                            <div class="book-cover" style="background: none; padding: 0;">
+                                <img src="${book.coverImage}" alt="${book.title}">
+                            </div>
+                        `;
+                    } else {
+                        // Show colored background with initials
+                        coverHTML = `
+                            <div class="book-cover" style="background: linear-gradient(45deg, ${book.color || generateRandomColor()}, ${book.color || generateRandomColor()}80);">
+                                <span style="font-size: 1.2em; padding: 20px; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">
+                                    ${book.title.split(' ').map(word => word[0]).join('').toUpperCase()}
+                                </span>
+                            </div>
+                        `;
+                    }
                     
                     bookCard.innerHTML = `
                         <div class="book-actions" style="display: none;">
@@ -1462,9 +1415,7 @@
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
-                        <div class="book-cover" style="background: linear-gradient(45deg, ${book.color || generateRandomColor()}, ${book.color || generateRandomColor()}80);">
-                            <span style="font-size: 1.2em; padding: 20px; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">${book.title.split(' ').map(word => word[0]).join('').toUpperCase()}</span>
-                        </div>
+                        ${coverHTML}
                         <h3 class="book-title">${book.title}</h3>
                         <div style="margin-bottom: 10px;">
                             <span style="background: var(--light-gray); color: var(--gray); padding: 4px 12px; border-radius: 15px; font-size: 0.9em;">
@@ -1488,21 +1439,59 @@
                 localStorage.setItem('books', JSON.stringify(books));
             }
 
-            // Add a new book
+            // Handle image upload
+            bookCoverInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    // Check file size (max 5MB)
+                    if (file.size > 5 * 1024 * 1024) {
+                        showToast('Image too large! Max 5MB allowed.', 'error');
+                        this.value = '';
+                        return;
+                    }
+                    
+                    // Check file type
+                    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+                    if (!validTypes.includes(file.type)) {
+                        showToast('Invalid file type! Use JPG, PNG or WebP.', 'error');
+                        this.value = '';
+                        return;
+                    }
+                    
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        // Save image data temporarily
+                        currentUploadedImage = e.target.result;
+                        imagePreview.src = currentUploadedImage;
+                        imagePreview.style.display = 'block';
+                        showToast('Cover image uploaded successfully!', 'success');
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            // Add a new book WITH COVER IMAGE
             function addBook(bookData) {
                 const newBook = {
-                    id: Date.now(), // Unique ID
+                    id: Date.now(),
                     title: bookData.title.trim(),
                     genre: bookData.genre,
                     description: bookData.description.trim(),
                     year: parseInt(bookData.year),
                     link: bookData.link || 'https://author.amazon.com/home',
-                    color: generateRandomColor()
+                    color: generateRandomColor(),
+                    coverImage: currentUploadedImage // Save the uploaded image
                 };
                 
                 books.push(newBook);
                 saveBooks();
                 displayBooks();
+                
+                // Reset image upload
+                currentUploadedImage = null;
+                bookCoverInput.value = '';
+                imagePreview.style.display = 'none';
+                
                 showToast('Book added successfully!', 'success');
             }
 
@@ -1517,7 +1506,14 @@
                 document.getElementById('publicationYear').value = book.year;
                 document.getElementById('bookLink').value = book.link;
                 
-                // Change button text
+                // Load existing cover image if available
+                if (book.coverImage) {
+                    currentUploadedImage = book.coverImage;
+                    imagePreview.src = book.coverImage;
+                    imagePreview.style.display = 'block';
+                }
+                
+                // Change button text and function
                 const submitBtn = document.querySelector('.add-btn');
                 submitBtn.innerHTML = '<i class="fas fa-save"></i> Update Book';
                 submitBtn.onclick = function(e) {
@@ -1539,6 +1535,11 @@
                     year: parseInt(document.getElementById('publicationYear').value),
                     link: document.getElementById('bookLink').value
                 };
+                
+                // Keep existing cover image unless new one uploaded
+                if (currentUploadedImage) {
+                    books[index].coverImage = currentUploadedImage;
+                }
                 
                 books[index] = { ...books[index], ...bookData };
                 saveBooks();
@@ -1564,23 +1565,12 @@
                 addBookForm.reset();
                 imagePreview.style.display = 'none';
                 imagePreview.src = '';
+                currentUploadedImage = null;
+                bookCoverInput.value = '';
                 const submitBtn = document.querySelector('.add-btn');
                 submitBtn.innerHTML = '<i class="fas fa-plus-circle"></i> Add New Book';
                 submitBtn.onclick = null;
             }
-
-            // Handle image upload preview
-            bookCoverInput.addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        imagePreview.src = e.target.result;
-                        imagePreview.style.display = 'block';
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
 
             // Handle form submission
             addBookForm.addEventListener('submit', function(e) {
@@ -1617,8 +1607,6 @@
                 
                 addBook(bookData);
                 resetForm();
-                
-                // Scroll to books section
                 document.getElementById('books').scrollIntoView({ behavior: 'smooth' });
             });
 
@@ -1630,6 +1618,13 @@
                 saveBooks();
             }
             
+            // Setup logout button
+            document.getElementById('logoutBtn').addEventListener('click', logoutAdmin);
+            
+            // Check for admin mode
+            checkForAdminMode();
+            window.addEventListener('hashchange', checkForAdminMode);
+            
             // Smooth scrolling for navigation
             document.querySelectorAll('.nav-link').forEach(link => {
                 link.addEventListener('click', function(e) {
@@ -1638,11 +1633,8 @@
                     const targetSection = document.querySelector(targetId);
                     
                     if (targetSection) {
-                        // Update active link
                         document.querySelectorAll('.nav-link').forEach(nav => nav.classList.remove('active'));
                         this.classList.add('active');
-                        
-                        // Scroll to section
                         targetSection.scrollIntoView({ behavior: 'smooth' });
                     }
                 });
